@@ -108,7 +108,8 @@
   <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/+esm"
 } }
 </script>
 </head>
@@ -133,14 +134,15 @@
     </section>
     <section>
       <div class="row"><button id="random">ランダム</button><button id="gridToggle">並べる</button></div>
+      <div class="row"><button id="guiToggle" aria-pressed="false">見た目を調整（P）</button></div>
     </section>
-    <section><a href="./million.html" style="color: var(--ink)">100万円バーガー →</a></section>
+    <section><a href="./million.html" style="color: var(--ink)">100万円バーガー →</a><a href="./tune.html" style="color: var(--ink)">具材の見た目を調整する →</a></section>
   </div>
   <div id="info">
     <div id="serial"></div>
     <div id="spec"></div>
   </div>
-  <div id="hint">Space 長押し／ダブルクリック：分解してソースを見る<br>R：ランダム　G：並べる　ドラッグ：回転</div>
+  <div id="hint">Space 長押し／ダブルクリック：分解してソースを見る<br>R：ランダム　G：並べる　P：見た目を調整　ドラッグ：回転</div>
   <script type="module" src="./main.js"></script>
 </body>
 

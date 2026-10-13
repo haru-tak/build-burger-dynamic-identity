@@ -5,6 +5,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { loadLook, makeLookMaterial, applyLook, setupLighting, bakeParts } from "./look.js";
 
 // スキャンした具材の軽い版（8,300個並べるので）。代替モデルに戻すなら "../../02_assets/models/"
 const MODEL_DIR = "../../02_assets/models-web/lite/";
@@ -34,13 +35,8 @@ scene.background = new THREE.Color(0xffffff);
 const camera = new THREE.PerspectiveCamera(30, 1, 1, 1e6);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-scene.add(new THREE.HemisphereLight(0xffffff, 0xd8c8b0, 1.6));
-const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-sun.position.set(2, 4, 2.5);
-scene.add(sun);
-const fill = new THREE.DirectionalLight(0xffffff, 0.6);
-fill.position.set(-3, 1, -2);
-scene.add(fill);
+// 照明と映り込みは、調整ページ（tune.html）と同じにする（look.js）
+const { sun } = setupLighting(scene, renderer);
 
 function resize() {
   renderer.setSize(innerWidth, innerHeight);
@@ -50,6 +46,18 @@ function resize() {
 addEventListener("resize", resize);
 resize();
 
+// 頂点カラーの倍率を戻す（glTFの頂点カラーは0〜1なので、スキャンの継ぎ目を明るくする倍率は半分にして入れてある。merge_scans.py）
+function applyColorScale(scene, scale) {
+  if (!scale) return;
+  const done = new Set(); // 部品（玉ねぎのかけら）どうしでマテリアルを共有しているので、1回だけ掛ける
+  scene.traverse((o) => {
+    if (o.isMesh && o.geometry.attributes.color && !done.has(o.material)) {
+      o.material.color.multiplyScalar(scale);
+      done.add(o.material);
+    }
+  });
+}
+
 // ---------- モデル読み込み ----------
 const manifest = await (await fetch(MODEL_DIR + "models.json")).json();
 const loader = new GLTFLoader();
@@ -57,9 +65,30 @@ const models = {};
 await Promise.all(
   [...Object.keys(STOCK), "mannequin"].map(async (name) => {
     const gltf = await loader.loadAsync(MODEL_DIR + manifest[name].file);
+    applyColorScale(gltf.scene, manifest[name].colorScale);
     models[name] = { scene: gltf.scene, h: manifest[name].stackHeight };
   }),
 );
+
+// 見た目は、調整ページで決めた基準値を使う（8,300個を一度に描くので、揺らぎは入れない）。
+// 「透け」は描くのが重い（画面をもう1回描く）ので、ここでは切る
+const look = await loadLook();
+for (const name of Object.keys(STOCK)) {
+  const entry = look.ingredients[name];
+  if (!entry) continue;
+  const made = new Map(); // かけらどうしで共有しているマテリアルは、1つだけ作る
+  models[name].scene.traverse((o) => {
+    if (!o.isMesh) return;
+    if (!made.has(o.material)) {
+      const m = makeLookMaterial(o.material);
+      applyLook(m, { ...entry.base, transmission: 0 });
+      made.set(o.material, m);
+    }
+    o.material = made.get(o.material);
+  });
+  // 玉ねぎのかけらは、マテリアルごとに1つの形にまとめる（インスタンスの種類が180→3に減って軽くなる）
+  models[name].scene = bakeParts(models[name].scene);
+}
 
 // 具材ごとに、中のメッシュ1つにつき InstancedMesh を1つ作る（数は仕入れの数）
 const instanced = {};

@@ -1,43 +1,51 @@
 {
   "bun-bottom": {
     "file": "bun-bottom.glb",
-    "stackHeight": 1.916,
-    "scan": "bans-shita-01"
+    "stackHeight": 1.951,
+    "scan": "bans-shita-01",
+    "colorScale": 2.0
   },
   "bun-top": {
     "file": "bun-top.glb",
     "stackHeight": 2.457,
-    "scan": "bans-ue-01"
+    "scan": "bans-ue-01",
+    "colorScale": 2.0
   },
   "patty": {
     "file": "patty.glb",
     "stackHeight": 0.958,
-    "scan": "patty-01"
+    "scan": "patty-01",
+    "colorScale": 2.0
   },
   "cheese": {
     "file": "cheese.glb",
     "stackHeight": 0.925,
-    "scan": "cheese-square"
+    "scan": "cheese-square",
+    "colorScale": 2.0
   },
   "onion": {
     "file": "onion.glb",
-    "stackHeight": 1.938,
-    "scan": "onion"
+    "stackHeight": 1.958,
+    "scan": "onion",
+    "colorScale": 2.0
   },
   "sauce-ketchup": {
     "file": "sauce-ketchup.glb",
-    "stackHeight": 0.963,
-    "scan": "ketchup"
+    "stackHeight": 0.964,
+    "scan": "ketchup",
+    "colorScale": 2.0
   },
   "sauce-relish": {
     "file": "sauce-relish.glb",
     "stackHeight": 1.308,
-    "scan": "relish"
+    "scan": "relish",
+    "colorScale": 2.0
   },
   "sauce-burger": {
     "file": "sauce-burger.glb",
     "stackHeight": 0.74,
-    "scan": "sauce"
+    "scan": "sauce",
+    "colorScale": 2.0
   },
   "mannequin": {
     "file": "mannequin.glb",
