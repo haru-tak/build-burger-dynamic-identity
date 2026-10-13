@@ -9,3 +9,9 @@ schedule.md
 
 # Blenderの自動バックアップ
 *.blend1
+
+# スキャンの元データと途中のモデル（数十MBあるので上げない。アプリは models-web だけを使う）
+02_assets/models-scanned/
+02_assets/models-trimmed/
+02_assets/models-merged/
+02_assets/blender/scans-*.blend

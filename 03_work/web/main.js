@@ -4,7 +4,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-const MODEL_DIR = "../../02_assets/models/";
+// スキャンした具材（02_assets/blender/make_web_models.py で作る）。代替モデルに戻すなら "../../02_assets/models/"
+const MODEL_DIR = "../../02_assets/models-web/";
 const MAX_TIERS = 10;
 const SAUCES = [
   { key: null, name: "なし", short: "—" },

@@ -1,0 +1,46 @@
+{
+  "bun-bottom": {
+    "file": "bun-bottom.glb",
+    "stackHeight": 1.909,
+    "scan": "bans-shita-01"
+  },
+  "bun-top": {
+    "file": "bun-top.glb",
+    "stackHeight": 2.443,
+    "scan": "bans-ue-01"
+  },
+  "patty": {
+    "file": "patty.glb",
+    "stackHeight": 0.958,
+    "scan": "patty-01"
+  },
+  "cheese": {
+    "file": "cheese.glb",
+    "stackHeight": 0.925,
+    "scan": "cheese-square"
+  },
+  "onion": {
+    "file": "onion.glb",
+    "stackHeight": 1.954,
+    "scan": "onion"
+  },
+  "sauce-ketchup": {
+    "file": "sauce-ketchup.glb",
+    "stackHeight": 1.011,
+    "scan": "ketchup"
+  },
+  "sauce-relish": {
+    "file": "sauce-relish.glb",
+    "stackHeight": 1.317,
+    "scan": "relish"
+  },
+  "sauce-burger": {
+    "file": "sauce-burger.glb",
+    "stackHeight": 0.749,
+    "scan": "sauce"
+  },
+  "mannequin": {
+    "file": "mannequin.glb",
+    "stackHeight": 160.0
+  }
+}

@@ -6,7 +6,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-const MODEL_DIR = "../../02_assets/models/";
+// スキャンした具材の軽い版（8,300個並べるので）。代替モデルに戻すなら "../../02_assets/models/"
+const MODEL_DIR = "../../02_assets/models-web/lite/";
 const PRICE = 1_000_000;
 // 仕入れ（玉ねぎ 15kg は、1段10gで 1500段分）
 const STOCK = { "bun-bottom": 1500, "bun-top": 1500, patty: 2000, cheese: 1800, onion: 1500 };
