@@ -41,6 +41,7 @@ SIDE_LIMIT = 0.5  # 面の向き（上下の成分）がこれより小さい、
 KEEP_PLAIN = ()  # この名前で始まるマテリアルの面は、テクスチャを貼らずにモデル版の色のまま
 REMOVE = ("sesame",)  # この名前で始まるマテリアルの部品は、取り除く（ごまはいらない。2026-10-19）
 ALIGN_SQUARE = {"cheese"}  # スキャンを、四角の向きがモデル版とそろうように回す（斜めに置いて撮ったチーズ）
+NO_SIDE = {"cheese"}  # 薄い板なので、立った面（垂れた角など）も、上か下から当てる（横から取った色は筋だらけになる）
 SIDE_FROM_TOP = {"bun-top"}  # 縁（立った面）に、横から取った色ではなく、上から見た色の縁近くを外へ引き延ばして当てる
 COLOR_MATCH = 0.85  # 色をモデル版の色に寄せる強さ（0: スキャンのまま、1: 色味は完全にモデル版）
 SATURATION = 1.15  # 最後に彩度を上げる倍率
@@ -112,7 +113,8 @@ def align_square(high):
     co = np.array([v.co[:] for v in high.data.vertices])
     best = min(range(0, 90), key=lambda deg: np.prod(np.ptp(co[:, :2] @ np.array(
         [[math.cos(math.radians(deg)), -math.sin(math.radians(deg))], [math.sin(math.radians(deg)), math.cos(math.radians(deg))]]), axis=0)))
-    high.data.transform(Matrix.Rotation(math.radians(best), 4, "Z"))
+    # 上の計算は「点を -best° 回す」ことにあたるので、同じ向きに回す
+    high.data.transform(Matrix.Rotation(-math.radians(best), 4, "Z"))
     return best
 
 
@@ -241,6 +243,8 @@ def planar(high, low, app_name, face_mat, face_col, top_only):
     nz = np.array([p.normal.z for p in me.polygons])
     # 面の向きで、どちらから当てるかを決める: 上を向いた面は上から、下は下から、横（立った面）は横から
     side = np.abs(nz) < SIDE_LIMIT
+    if app_name in NO_SIDE:
+        side[:] = False
     up = ~side & (nz >= 0)
     down = ~side & (nz < 0)
     area = np.array([p.area for p in me.polygons])
