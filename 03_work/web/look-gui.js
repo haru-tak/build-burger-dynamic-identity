@@ -1,5 +1,5 @@
 // 具材の見た目の調整パネル（lil-gui）。調整ページ（tune.html）とジェネレーター（index.html）で共有する
-import { PARAMS, COLOR_PARAMS } from "./look.js";
+import { PARAMS, COLOR_PARAMS, LIGHT_PARAMS, LIGHT_COLORS, TONE_MAPPINGS, DEFAULT_LIGHTING } from "./look.js";
 
 // 1つの具材の「基準値」「揺らぎの幅」のスライダーを、gui に足す。
 // onChange(kind) は値が変わるたびに呼ばれる（kind は "base" か "range"）
@@ -19,6 +19,16 @@ export function addLookControls(gui, entry, onChange) {
     g.add(entry.range, p.key, 0, (p.max - p.min) / 2, p.step).name(p.label).onChange(() => onChange("range"));
   }
   return { baseFolder, rangeFolder };
+}
+
+// 照明のスライダーを、gui に足す（全部の具材に共通）
+export function addLightControls(gui, lighting, onChange) {
+  const f = gui.addFolder("光（全体）");
+  f.add(lighting, "toneMapping", Object.keys(TONE_MAPPINGS)).name("色の変換").onChange(onChange);
+  for (const p of LIGHT_PARAMS) f.add(lighting, p.key, p.min, p.max, p.step).name(p.label).onChange(onChange);
+  for (const p of LIGHT_COLORS) f.addColor(lighting, p.key).name(p.label).onChange(onChange);
+  f.add({ run: () => { Object.assign(lighting, DEFAULT_LIGHTING); f.controllersRecursive().forEach((c) => c.updateDisplay()); onChange(); } }, "run").name("光を初期値に戻す");
+  return f;
 }
 
 // 調整した値を look.json としてダウンロードする

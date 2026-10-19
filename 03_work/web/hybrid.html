@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BUILD BURGER hybrid</title>
+  <style>
+    :root {
+      --paper: #fff;
+      --ink: #000;
+      --grid: rgb(0 0 0 / 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Yu Gothic", "YuGothic", "游ゴシック", "Hiragino Sans", sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      display: block;
+    }
+
+    #ui {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: 220px;
+      display: grid;
+      gap: 12px;
+    }
+
+    #ui>section {
+      display: grid;
+      gap: 4px;
+    }
+
+    .label {
+      font-weight: 700;
+    }
+
+    button {
+      font: inherit;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      padding: 1px 8px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .tier {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .tier span {
+      width: 2em;
+    }
+
+    #sauce[hidden] {
+      display: none;
+    }
+
+    #info {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+    }
+
+    #serial {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    #hint {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      text-align: right;
+    }
+  </style>
+  <script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/+esm"
+} }
+</script>
+</head>
+
+<body data-models="hybrid">
+  <div id="ui">
+    <section>
+      <div class="label">段数</div>
+      <div class="row"><button id="minus">−</button><span id="count"></span><button id="plus">＋</button></div>
+    </section>
+    <section>
+      <div class="label">具材選択</div>
+      <div id="tiers"></div>
+    </section>
+    <section>
+      <div class="label">スペシャル</div>
+      <div class="row" id="special"></div>
+    </section>
+    <section>
+      <div class="row"><button id="sauceToggle">ソースを選ぶ</button></div>
+      <div id="sauce" hidden></div>
+    </section>
+    <section>
+      <div class="row"><button id="random">ランダム</button><button id="gridToggle">並べる</button></div>
+      <div class="row"><button id="guiToggle" aria-pressed="false">見た目を調整（P）</button></div>
+    </section>
+    <section><a href="./index.html" style="color: var(--ink)">ジェネレーター →</a><a href="./scan.html" style="color: var(--ink)">スキャン版 →</a></section>
+  </div>
+  <div id="info">
+    <div id="serial"></div>
+    <div id="spec"></div>
+  </div>
+  <div id="hint">Space 長押し／ダブルクリック：分解してソースを見る<br>R：ランダム　G：並べる　ドラッグ：回転</div>
+  <script type="module" src="./main.js"></script>
+</body>
+
+</html>

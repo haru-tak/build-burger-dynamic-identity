@@ -17,10 +17,10 @@ export const PARAMS = [
   { key: "roughness", label: "ざらつき", min: 0, max: 1, step: 0.01, group: "質感" },
   { key: "clearcoat", label: "つやの膜", min: 0, max: 1, step: 0.01, group: "質感" },
   { key: "clearcoatRoughness", label: "つやの膜のざらつき", min: 0, max: 1, step: 0.01, group: "質感" },
-  { key: "transmission", label: "透け", min: 0, max: 1, step: 0.01, group: "質感" },
+  { key: "transmission", label: "透け（上げると後ろの具材が透けて暗く見える）", min: 0, max: 1, step: 0.01, group: "質感" },
   { key: "thickness", label: "透ける厚み（cm）", min: 0, max: 3, step: 0.01, group: "質感" },
   { key: "sheen", label: "毛羽・粉っぽさ", min: 0, max: 1, step: 0.01, group: "質感" },
-  { key: "bump", label: "でこぼこ", min: 0, max: 1, step: 0.01, group: "質感" },
+  { key: "bump", label: "細かい凹凸（0.25で元のまま）", min: 0, max: 1, step: 0.01, group: "質感" },
   { key: "envMapIntensity", label: "映り込み", min: 0, max: 4, step: 0.01, group: "質感" },
   { key: "scaleXZ", label: "横の大きさ", min: 0.6, max: 1.4, step: 0.01, group: "形" },
   // 表面を、ノイズで押し出したり引っ込めたりする。模様はバーガーごとの乱数でずれるので、1つずつ形が変わる
@@ -34,7 +34,7 @@ export const COLOR_PARAMS = [{ key: "tint", label: "色を足す（色）", grou
 const NEUTRAL = {
   hue: 0, saturation: 1, brightness: 1, contrast: 1, tintAmount: 0, tint: "#ffffff",
   roughness: 0.7, clearcoat: 0, clearcoatRoughness: 0.1, transmission: 0, thickness: 0.5,
-  sheen: 0, bump: 0, envMapIntensity: 1, scaleXZ: 1, scaleY: 1, displace: 0, displaceScale: 1,
+  sheen: 0, bump: 0.25, envMapIntensity: 1, scaleXZ: 1, scaleY: 1, displace: 0, displaceScale: 1,
 };
 const NO_RANGE = Object.fromEntries(PARAMS.map((p) => [p.key, 0]));
 
@@ -43,45 +43,73 @@ const base = (o) => ({ ...NEUTRAL, ...o });
 const range = (o) => ({ ...NO_RANGE, ...o });
 export const DEFAULTS = {
   "bun-bottom": {
-    base: base({ roughness: 0.75, sheen: 0.25, bump: 0.25, saturation: 1.1 }),
+    base: base({ roughness: 0.85, sheen: 0.25, bump: 0.25, saturation: 1.1, envMapIntensity: 0.6 }),
     range: range({ hue: 0.01, brightness: 0.08, scaleXZ: 0.04, scaleY: 0.08 }),
   },
   "bun-top": {
-    base: base({ roughness: 0.6, sheen: 0.25, bump: 0.25, saturation: 1.15, clearcoat: 0.15, clearcoatRoughness: 0.4 }),
+    base: base({ roughness: 0.75, sheen: 0.25, bump: 0.25, saturation: 1.15, envMapIntensity: 0.6 }),
     range: range({ hue: 0.01, brightness: 0.08, scaleXZ: 0.04, scaleY: 0.08 }),
   },
   patty: {
-    base: base({ roughness: 0.55, clearcoat: 0.3, clearcoatRoughness: 0.35, bump: 0.4, contrast: 1.15 }),
+    base: base({ roughness: 0.7, clearcoat: 0.1, clearcoatRoughness: 0.5, bump: 0.4, contrast: 1.15, envMapIntensity: 0.6 }),
     range: range({ brightness: 0.1, scaleXZ: 0.05, scaleY: 0.1 }),
   },
   cheese: {
-    base: base({ roughness: 0.35, clearcoat: 0.5, clearcoatRoughness: 0.2, transmission: 0.05, saturation: 1.2, tint: "#ffb000", tintAmount: 0.15 }),
+    base: base({ roughness: 0.55, clearcoat: 0.15, clearcoatRoughness: 0.45, transmission: 0.05, envMapIntensity: 0.7, saturation: 1.2, tint: "#ffb000", tintAmount: 0.15 }),
     range: range({ hue: 0.01, brightness: 0.06, scaleXZ: 0.03 }),
   },
   onion: {
-    base: base({ roughness: 0.25, clearcoat: 0.4, clearcoatRoughness: 0.15, transmission: 0.25, thickness: 0.8,
+    base: base({ roughness: 0.5, clearcoat: 0.1, clearcoatRoughness: 0.4, transmission: 0, thickness: 0.8, envMapIntensity: 0.7,
       saturation: 0.7, brightness: 1.15, tint: "#efe4c8", tintAmount: 0.25, bump: 0.2, displace: 0.2, displaceScale: 1.3 }),
-    range: range({ brightness: 0.1, transmission: 0.1, scaleXZ: 0.08, scaleY: 0.15, displace: 0.06, displaceScale: 0.3 }),
+    range: range({ brightness: 0.1, scaleXZ: 0.08, scaleY: 0.15, displace: 0.06, displaceScale: 0.3 }),
   },
   "sauce-ketchup": {
-    base: base({ roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.03, transmission: 0.12, thickness: 0.4,
-      saturation: 1.6, brightness: 0.9, contrast: 1.1, tint: "#b8140c", tintAmount: 0.35, envMapIntensity: 1.6, displace: 0.08, displaceScale: 0.6 }),
+    base: base({ roughness: 0.3, clearcoat: 0.45, clearcoatRoughness: 0.2, transmission: 0.04, thickness: 0.4,
+      saturation: 1.6, brightness: 0.9, contrast: 1.1, tint: "#b8140c", tintAmount: 0.35, envMapIntensity: 1, displace: 0.08, displaceScale: 0.6 }),
     range: range({ brightness: 0.08, scaleXZ: 0.1, scaleY: 0.2, displace: 0.04 }),
   },
   "sauce-relish": {
-    base: base({ roughness: 0.25, clearcoat: 0.85, clearcoatRoughness: 0.08, transmission: 0.08, thickness: 0.4,
-      hue: 0.06, saturation: 1.4, tint: "#5e8a1e", tintAmount: 0.5, bump: 0.5, envMapIntensity: 1.3, displace: 0.08, displaceScale: 0.9 }),
+    base: base({ roughness: 0.4, clearcoat: 0.35, clearcoatRoughness: 0.25, transmission: 0.03, thickness: 0.4,
+      hue: 0.06, saturation: 1.4, tint: "#5e8a1e", tintAmount: 0.5, bump: 0.5, envMapIntensity: 0.9, displace: 0.08, displaceScale: 0.9 }),
     range: range({ hue: 0.015, brightness: 0.08, scaleXZ: 0.1, scaleY: 0.2, displace: 0.04 }),
   },
   "sauce-burger": {
-    base: base({ roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.12, saturation: 0.9, brightness: 1.25,
-      tint: "#f0a070", tintAmount: 0.45, envMapIntensity: 1.2, displace: 0.08, displaceScale: 0.6 }),
+    base: base({ roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.3, saturation: 0.9, brightness: 1.25,
+      tint: "#f0a070", tintAmount: 0.45, envMapIntensity: 0.9, displace: 0.08, displaceScale: 0.6 }),
     range: range({ brightness: 0.08, scaleXZ: 0.1, scaleY: 0.2, displace: 0.04 }),
   },
 };
 
+// 照明のパラメタ（look.json の lighting）。料理写真のように、暖かい主光・縁を光らせる逆光・影で立体感を出す
+export const LIGHT_PARAMS = [
+  { key: "exposure", label: "全体の明るさ（露出）", min: 0.2, max: 3, step: 0.01 },
+  { key: "keyIntensity", label: "主光の強さ", min: 0, max: 10, step: 0.01 },
+  { key: "keyAngle", label: "主光の向き（カメラから°）", min: -180, max: 180, step: 1 },
+  { key: "keyHeight", label: "主光の高さ（°）", min: 5, max: 89, step: 1 },
+  { key: "rimIntensity", label: "逆光（縁の光）の強さ", min: 0, max: 10, step: 0.01 },
+  { key: "rimHeight", label: "逆光の高さ（°）", min: 5, max: 89, step: 1 },
+  { key: "fillIntensity", label: "まわりの柔らかい光", min: 0, max: 4, step: 0.01 },
+  { key: "envIntensity", label: "映り込みの光", min: 0, max: 2, step: 0.01 },
+  { key: "shadow", label: "床の影の濃さ", min: 0, max: 1, step: 0.01 },
+];
+export const LIGHT_COLORS = [
+  { key: "keyColor", label: "主光の色" },
+  { key: "rimColor", label: "逆光の色" },
+  { key: "fillSky", label: "上からの光の色" },
+  { key: "fillGround", label: "下からの照り返しの色" },
+];
+// 色の変換（トーンマッピング）。Neutral は暖色がくすみにくい。ACES は暗く・地味になりやすい
+export const TONE_MAPPINGS = { Neutral: THREE.NeutralToneMapping, AgX: THREE.AgXToneMapping, ACES: THREE.ACESFilmicToneMapping };
+export const DEFAULT_LIGHTING = {
+  toneMapping: "Neutral", exposure: 1.05,
+  keyIntensity: 3.2, keyColor: "#ffd6a6", keyAngle: -40, keyHeight: 38,
+  rimIntensity: 2.6, rimColor: "#fff0d6", rimHeight: 28,
+  fillIntensity: 0.7, fillSky: "#fff4e4", fillGround: "#8a5a3a",
+  envIntensity: 0.3, shadow: 0.3,
+};
+
 export function defaultLook() {
-  return { version: 1, ingredients: structuredClone(DEFAULTS) };
+  return { version: 1, lighting: { ...DEFAULT_LIGHTING }, ingredients: structuredClone(DEFAULTS) };
 }
 
 // 調整した値を読む。このブラウザに保存した値 → look.json（チームで共有する値）→ 初期値 の順
@@ -100,18 +128,76 @@ export async function loadLook() {
 
 // 照明と映り込み。調整ページとジェネレーターで同じにする（調整ページで見た質感が、そのままジェネレーターでも同じに見えるように）
 export function setupLighting(scene, renderer) {
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; // 液体のつやは、これが映り込むことで出る
-  scene.environmentIntensity = 0.6;
-  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-  sun.position.set(20, 40, 25);
-  scene.add(sun);
-  return { sun };
+
+  const key = new THREE.DirectionalLight(); // 主光: 暖かい色で斜め前から。影を落とす
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  const rim = new THREE.DirectionalLight(); // 逆光: 後ろから当てて、具材の縁を光らせる
+  const hemi = new THREE.HemisphereLight(); // 上からの光と、下からの照り返し
+  // 白い床。影だけが見える
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShadowMaterial({ opacity: 0.3 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(key, key.target, rim, rim.target, hemi, ground);
+
+  let L = { ...DEFAULT_LIGHTING };
+  let reach = 30; // 光を置く距離
+  const dir = (az, el) => new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+  return {
+    key, rim, hemi, ground,
+    // 照明のパラメタを反映する
+    apply(lighting) {
+      L = { ...DEFAULT_LIGHTING, ...lighting };
+      renderer.toneMapping = TONE_MAPPINGS[L.toneMapping] ?? THREE.NeutralToneMapping;
+      renderer.toneMappingExposure = L.exposure;
+      key.color.set(L.keyColor);
+      key.intensity = L.keyIntensity;
+      rim.color.set(L.rimColor);
+      rim.intensity = L.rimIntensity;
+      hemi.color.set(L.fillSky);
+      hemi.groundColor.set(L.fillGround);
+      hemi.intensity = L.fillIntensity;
+      scene.environmentIntensity = L.envIntensity;
+      ground.material.opacity = L.shadow;
+      ground.visible = L.shadow > 0;
+    },
+    // 影を落とす範囲を、見せているものの大きさに合わせる（radius: 横の半径、height: 高さ。cm）
+    fit(radius, height) {
+      const r = Math.max(radius, height) * 1.2 + 2;
+      const cam = key.shadow.camera;
+      cam.left = cam.bottom = -r;
+      cam.right = cam.top = r;
+      cam.near = 0.1;
+      cam.far = r * 6;
+      cam.updateProjectionMatrix();
+      // 影の細かい乱れ（シャドウアクネ）を防ぐ。影の画像の1マスの大きさに合わせて、面から浮かせて影を計算する。
+      // 主光はカメラに合わせて毎コマ動くので、乱れがあるとチラチラして見える
+      const texel = (2 * r) / key.shadow.mapSize.x;
+      key.shadow.normalBias = texel * 3;
+      key.shadow.bias = -texel * 0.5 / cam.far;
+      reach = r * 3;
+      ground.scale.setScalar(r * 40);
+    },
+    // カメラが回っても、カメラから見て同じ向きから光が当たるようにする（毎コマ呼ぶ）
+    update(camera, target) {
+      const camAz = Math.atan2(camera.position.x - target.x, camera.position.z - target.z);
+      const toRad = THREE.MathUtils.degToRad;
+      key.position.copy(target).addScaledVector(dir(camAz + toRad(L.keyAngle), toRad(L.keyHeight)), reach);
+      key.target.position.copy(target);
+      rim.position.copy(target).addScaledVector(dir(camAz + Math.PI + toRad(25), toRad(L.rimHeight)), reach);
+      rim.target.position.copy(target);
+    },
+  };
 }
 
 // 足りない項目を初期値で埋める（パラメタを増やしたあとに、古い look.json を読んでも動くように）
 export function normalizeLook(look) {
   const out = defaultLook();
+  Object.assign(out.lighting, look?.lighting ?? {});
   for (const [name, v] of Object.entries(look?.ingredients ?? {})) {
     if (!out.ingredients[name]) out.ingredients[name] = { base: base({}), range: range({}) };
     Object.assign(out.ingredients[name].base, v.base ?? {});
@@ -219,7 +305,14 @@ export function makeLookMaterial(original) {
     side: original.side,
     ior: 1.4,
   });
-  m.bumpMap = original.map ?? null; // でこぼこは、テクスチャの濃淡から作る
+  // 細かい凹凸: 法線マップ（make_web_models.py で、面を減らす前の形から焼き込んだもの）があればそれを使う。
+  // なければ、テクスチャの濃淡から作る（バンプ）
+  if (original.normalMap) {
+    m.normalMap = original.normalMap;
+    m.userData.normalScale = original.normalScale.clone();
+  } else {
+    m.bumpMap = original.map ?? null;
+  }
   m.userData.uniforms = {
     uHue: { value: 0 }, uSat: { value: 1 }, uVal: { value: 1 }, uContrast: { value: 1 },
     uTintAmt: { value: 0 }, uTint: { value: new THREE.Color(1, 1, 1) },
@@ -259,7 +352,9 @@ export function applyLook(material, v) {
   material.sheen = v.sheen;
   material.sheenRoughness = 0.6;
   material.sheenColor.setRGB(1, 0.95, 0.85);
-  material.bumpScale = v.bump * 3;
+  // 「でこぼこ」は、法線マップがあればその強さ（0.25 で元のまま）、なければバンプの強さ
+  if (material.normalMap) material.normalScale.copy(material.userData.normalScale).multiplyScalar(v.bump * 4);
+  else material.bumpScale = v.bump * 3;
   material.envMapIntensity = v.envMapIntensity;
 }
 
@@ -270,6 +365,7 @@ export function lookInstance(scene) {
   const made = new Map(); // 元のマテリアル → 調整できるマテリアル。部品どうしで共有しているものは、1つだけ作る（軽くするため）
   obj.traverse((o) => {
     if (!o.isMesh) return;
+    o.castShadow = o.receiveShadow = true;
     o.userData.originalMaterial = o.material;
     if (!made.has(o.material)) made.set(o.material, makeLookMaterial(o.material));
     o.material = made.get(o.material);

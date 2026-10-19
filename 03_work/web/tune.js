@@ -5,7 +5,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import GUI from "lil-gui";
 import { DEFAULTS, STORAGE_KEY, loadLook, normalizeLook, sample, rng, lookInstance, setupLighting } from "./look.js";
-import { addLookControls, downloadLook } from "./look-gui.js";
+import { addLookControls, addLightControls, downloadLook } from "./look-gui.js";
 
 const MODEL_DIR = "../../02_assets/models-web/";
 const GRID = { cols: 4, rows: 3, gap: 13 };
@@ -18,7 +18,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff);
-const { sun } = setupLighting(scene, renderer);
+const rig = setupLighting(scene, renderer); // 照明（look.json の lighting）
 
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 2000);
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -59,6 +59,7 @@ await Promise.all(
 
 // ---------- 調整の値 ----------
 const look = await loadLook();
+rig.apply(look.lighting);
 function save() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(look));
@@ -105,6 +106,7 @@ function frame() {
   const d = one ? 32 : 115;
   controls.target.set(0, one ? 1 : 0, 0);
   camera.position.set(d * 0.7, d * 0.55, d * 0.7);
+  rig.fit(one ? 7 : 45, 5);
 }
 
 // ---------- 左のUI ----------
@@ -156,11 +158,8 @@ function buildGui() {
     // 揺らぎをいじったら、並べる表示にして見せる
     if (kind === "range" && state.view !== "grid") { state.view = "grid"; build(); renderLeft(); }
   });
-  const env = gui.addFolder("光（この画面だけ）");
-  env.close();
-  env.add(scene, "environmentIntensity", 0, 2, 0.01).name("まわりの光");
-  env.add(sun, "intensity", 0, 4, 0.01).name("太陽の光");
-  env.add(controls, "autoRotate").name("回す");
+  addLightControls(gui, look.lighting, () => { rig.apply(look.lighting); save(); }).close();
+  gui.add(controls, "autoRotate").name("回す");
 }
 
 // ---------- 元のスキャンと比べる ----------
@@ -176,6 +175,7 @@ buildGui();
 build();
 renderer.setAnimationLoop(() => {
   controls.update();
+  rig.update(camera, controls.target);
   renderer.render(scene, camera);
 });
 

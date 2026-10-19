@@ -5,13 +5,19 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import GUI from "lil-gui";
 import { STORAGE_KEY, DEFAULTS, loadLook, lookInstance, sample, rng, setupLighting } from "./look.js";
-import { addLookControls, downloadLook, injectGuiStyle } from "./look-gui.js";
+import { addLookControls, addLightControls, downloadLook, injectGuiStyle } from "./look-gui.js";
 
-// スキャンした具材（02_assets/blender/make_web_models.py で作る）。代替モデルに戻すなら "../../02_assets/models/"
-const MODEL_DIR = "../../02_assets/models-web/";
+// どのモデルを使うか（<body data-models="…">）
+//   original: ジェネレーター（index.html）。最初に作った代替モデル（Blenderのローポリ）
+//   hybrid:   モデル＋スキャン色版（hybrid.html）。代替モデルの形に、スキャンの色を写したもの（make_hybrid_models.py）
+//   なし:     スキャン版（scan.html）。スキャンの具材
+const MODELS = document.body.dataset.models || "scan";
+const ORIGINAL = MODELS !== "scan"; // スキャン以外の形では、スキャン向けの質感パラメタ（look.json）を使わない
+const MODEL_DIR = { original: "../../02_assets/models/", hybrid: "../../02_assets/models-hybrid/" }[MODELS] ?? "../../02_assets/models-web/";
 // 「並べる」では、軽い版（100万円バーガー用）を使う。45個のバーガーを一度に描くので
-const LITE_DIR = "../../02_assets/models-web/lite/";
-const MAX_TIERS = 10;
+const LITE_DIR = ORIGINAL ? MODEL_DIR : "../../02_assets/models-web/lite/";
+const MAX_TIERS = 10; // スペシャルの10段まで
+const BASE_MAX_TIERS = 5; // 基本メニューは5段まで（要件定義書）
 const SAUCES = [
   { key: null, name: "なし", short: "—" },
   { key: "sauce-ketchup", name: "ケチャップ", short: "K" },
@@ -24,19 +30,31 @@ const BREADS = [
 ];
 
 // ---------- 状態 ----------
+// 基本メニュー: 1〜5段・バンズで挟む。スペシャル: 10段（ten）・パティで挟む（bread 1）。2つを重ねることもできる
 const state = {
   tiers: [{ cheese: true, onion: true }],
   bread: 0,
+  ten: false,
   sauceTop: 1,
   sauceBottom: 0,
   grid: false,
 };
 
 // ---------- 組み合わせの数と通し番号 ----------
-// 段の組み合わせ: Σ 4^n (n=1..10)。×ソース16 ×挟むもの2
+// 基本メニュー: 段の組み合わせ Σ 4^n (n=1..5) × ソース16 = 21,824通り（README の「20,000+α」の 20,000）。スペシャルは「+α」
 const tierCombos = (n) => 4 ** n;
 const TIER_TOTAL = Array.from({ length: MAX_TIERS }, (_, i) => tierCombos(i + 1)).reduce((a, b) => a + b);
-const TOTAL = TIER_TOTAL * 16 * BREADS.length;
+const BASE_TIER_TOTAL = Array.from({ length: BASE_MAX_TIERS }, (_, i) => tierCombos(i + 1)).reduce((a, b) => a + b);
+const TOTAL = BASE_TIER_TOTAL * 16;
+const isSpecial = (s) => s.ten || s.bread !== 0;
+// 基本メニューの番号（1〜21,824）
+function baseNumber(s) {
+  let t = 0;
+  for (let n = 1; n < s.tiers.length; n++) t += tierCombos(n);
+  t += s.tiers.reduce((acc, x) => acc * 4 + (x.cheese ? 2 : 0) + (x.onion ? 1 : 0), 0);
+  return (s.sauceTop * 4 + s.sauceBottom) * BASE_TIER_TOTAL + t + 1;
+}
+// スペシャルも含めた、すべてのバーガーの通し番号。見た目の揺らぎの種に使う（番号の付け方を変えると見た目が変わるので、変えない）
 function serialOf(s) {
   let t = 0;
   for (let n = 1; n < s.tiers.length; n++) t += tierCombos(n);
@@ -59,7 +77,7 @@ controls.enableDamping = true;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 1.2;
 // 照明と映り込みは、調整ページ（tune.html）と同じにする（look.js）
-setupLighting(scene, renderer);
+const rig = setupLighting(scene, renderer);
 
 const world = new THREE.Group();
 scene.add(world);
@@ -102,10 +120,12 @@ const [models, liteModels] = await Promise.all([loadModels(MODEL_DIR), loadModel
 
 // ---------- 見た目（調整ページで決めた値） ----------
 let look = await loadLook();
+rig.apply(look.lighting);
 // 調整ページを別のタブで開いていじると、すぐ反映する
 addEventListener("storage", async (e) => {
   if (e.key !== STORAGE_KEY) return;
   look = await loadLook();
+  rig.apply(look.lighting);
   variantCache = {};
   rebuild({ keepView: true });
   if (gui) openGui(); // パネルが古い値を指したままにならないように、作り直す
@@ -137,7 +157,7 @@ function buildBurger(s) {
   let y = 0;
   for (const { name, flip = false, rot = 0 } of layersOf(s)) {
     const m = models[name];
-    const entry = look.ingredients[name];
+    const entry = ORIGINAL ? null : look.ingredients[name]; // 代替モデルには、スキャン向けの質感を使わない
     let obj, h = m.h;
     if (entry) {
       const v = sample(entry, rand);
@@ -147,6 +167,7 @@ function buildBurger(s) {
       h = m.h * v.scaleY; // 厚みの揺らぎは、積む高さにも効かせる
     } else {
       obj = m.scene.clone();
+      obj.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
     }
     obj.rotation.y = rot;
     if (flip) obj.rotation.x = Math.PI;
@@ -168,7 +189,7 @@ let variantCache = {};
 function variantsOf(name) {
   if (variantCache[name]) return variantCache[name];
   const m = liteModels[name];
-  const entry = look.ingredients[name];
+  const entry = ORIGINAL ? null : look.ingredients[name];
   const list = [];
   for (let k = 0; k < (entry ? VARIANTS : 1); k++) {
     let obj, h = m.h;
@@ -226,6 +247,7 @@ function buildGrid({ reuse = false } = {}) {
   for (const { mesh, items } of groups.values()) {
     const im = new THREE.InstancedMesh(mesh.geometry, mesh.material, items.length);
     im.frustumCulled = false;
+    im.castShadow = im.receiveShadow = true;
     items.forEach((it, idx) => gridItems.push({ ...it, im, idx }));
     world.add(im);
   }
@@ -253,16 +275,18 @@ function rebuild({ keepView = false } = {}) {
 }
 
 function frame(height, zoom) {
+  rig.fit(state.grid ? 70 : 8, state.grid ? 20 : height);
   const d = Math.max(40, height * 2.4) * zoom;
   controls.target.set(0, state.grid ? 5 : height / 2, 0);
   camera.position.set(d * 0.75, height / 2 + d * 0.45, d * 0.75);
 }
 
 function randomState(forGrid = false) {
-  const n = 1 + Math.floor(Math.random() ** (forGrid ? 1.6 : 1.2) * MAX_TIERS);
+  const n = 1 + Math.floor(Math.random() ** (forGrid ? 1.6 : 1.2) * BASE_MAX_TIERS); // ランダムは基本メニューの中から
   return {
     tiers: Array.from({ length: n }, () => ({ cheese: Math.random() < 0.6, onion: Math.random() < 0.5 })),
-    bread: Math.random() < 0.1 ? 1 : 0,
+    bread: 0,
+    ten: false,
     sauceTop: Math.floor(Math.random() * 4),
     sauceBottom: Math.floor(Math.random() * 4),
     grid: state.grid,
@@ -293,7 +317,7 @@ addEventListener("keydown", (ev) => {
   if (ev.repeat) return;
   if (ev.key === "r" || ev.key === "R") randomize();
   if (ev.key === "g" || ev.key === "G") toggleGrid();
-  if (ev.key === "p" || ev.key === "P") toggleGui();
+  if ((ev.key === "p" || ev.key === "P") && !ORIGINAL) toggleGui();
 });
 addEventListener("keyup", (ev) => {
   if (ev.code === "Space" && !dblLatched) explodeTarget = 0;
@@ -330,7 +354,18 @@ function renderUI() {
       return row;
     }).reverse(), // 上の段を上に並べる
   );
-  $("bread").replaceChildren(...BREADS.map((b, i) => btn(b.name, state.bread === i, () => { state.bread = i; rebuild(); })));
+  // スペシャル: 押すとそのバーガーになり、もう一度押すと基本メニューに戻る
+  $("special").replaceChildren(
+    btn("10段", state.ten, () => {
+      state.ten = !state.ten;
+      if (state.ten) while (state.tiers.length < 10) state.tiers.push({ cheese: true, onion: true });
+      else state.tiers.length = Math.min(state.tiers.length, BASE_MAX_TIERS);
+      rebuild();
+    }),
+    btn("パティで挟む", state.bread === 1, () => { state.bread = state.bread === 1 ? 0 : 1; rebuild(); }),
+  );
+  $("minus").disabled = state.ten || state.tiers.length <= 1;
+  $("plus").disabled = state.ten || state.tiers.length >= BASE_MAX_TIERS;
   const sauceRow = (label, key) => {
     const wrap = document.createElement("div");
     const l = document.createElement("div");
@@ -346,10 +381,12 @@ function renderUI() {
   $("sauceToggle").setAttribute("aria-pressed", String(!$("sauce").hidden));
 
   const s = state;
-  $("serial").textContent = state.grid ? `${fmt(TOTAL)} 通り` : `No. ${fmt(serialOf(s))}`;
+  const detail = `${s.tiers.length}段・${s.tiers.map((t) => (t.cheese ? "C" : "-") + (t.onion ? "O" : "-")).join(" ")}・ソース 上${SAUCES[s.sauceTop].short} 下${SAUCES[s.sauceBottom].short}`;
+  const special = [s.ten && "10段", s.bread === 1 && "パティで挟む"].filter(Boolean).join("・");
+  $("serial").textContent = state.grid ? `${fmt(TOTAL)} 通り＋スペシャル` : isSpecial(s) ? `SP-${fmt(serialOf(s))}` : `No. ${fmt(baseNumber(s))}`;
   $("spec").textContent = state.grid
-    ? "ランダムに 45 個"
-    : `/ ${fmt(TOTAL)}　${s.tiers.length}段・${s.tiers.map((t) => (t.cheese ? "C" : "-") + (t.onion ? "O" : "-")).join(" ")}・ソース 上${SAUCES[s.sauceTop].short} 下${SAUCES[s.sauceBottom].short}`;
+    ? "基本メニューからランダムに 45 個"
+    : isSpecial(s) ? `スペシャル（${special}）　${detail}` : `/ ${fmt(TOTAL)}　${detail}`;
 }
 
 function randomize() {
@@ -362,8 +399,8 @@ function toggleGrid() {
   rebuild();
 }
 
-$("minus").onclick = () => { if (state.tiers.length > 1) { state.tiers.pop(); rebuild(); } };
-$("plus").onclick = () => { if (state.tiers.length < MAX_TIERS) { state.tiers.push({ cheese: true, onion: true }); rebuild(); } };
+$("minus").onclick = () => { if (!state.ten && state.tiers.length > 1) { state.tiers.pop(); rebuild(); } };
+$("plus").onclick = () => { if (!state.ten && state.tiers.length < BASE_MAX_TIERS) { state.tiers.push({ cheese: true, onion: true }); rebuild(); } };
 $("sauceToggle").onclick = (e) => { $("sauce").hidden = !$("sauce").hidden; e.currentTarget.blur(); renderUI(); };
 $("random").onclick = (e) => { randomize(); e.currentTarget.blur(); };
 $("gridToggle").onclick = (e) => { toggleGrid(); e.currentTarget.blur(); };
@@ -389,6 +426,12 @@ function openGui() {
   gui = new GUI({ title: "具材の見た目（P で閉じる）" });
   gui.add(tuneState, "name", Object.keys(look.ingredients)).name("具材").onChange(() => setTimeout(openGui));
   addLookControls(gui, look.ingredients[tuneState.name], lookChanged);
+  addLightControls(gui, look.lighting, () => {
+    rig.apply(look.lighting);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(look));
+    } catch {}
+  }).close();
   const tools = gui.addFolder("保存");
   tools.add({ run: () => downloadLook(look) }, "run").name("look.json を書き出す");
   tools.add({ run: () => {
@@ -406,6 +449,7 @@ function toggleGui() {
   } else openGui();
 }
 $("guiToggle").onclick = (e) => { toggleGui(); e.currentTarget.blur(); };
+if (ORIGINAL) $("guiToggle").hidden = true; // 代替モデル版では、質感の調整パネルは使わない
 
 rebuild();
 
@@ -420,6 +464,7 @@ renderer.setAnimationLoop((now) => {
     applyExplode(explode); // 分解の量が変わったときだけ、位置を計算し直す
   }
   controls.update();
+  rig.update(camera, controls.target);
   renderer.render(scene, camera);
 });
 

@@ -36,7 +36,7 @@ const camera = new THREE.PerspectiveCamera(30, 1, 1, 1e6);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 // 照明と映り込みは、調整ページ（tune.html）と同じにする（look.js）
-const { sun } = setupLighting(scene, renderer);
+const rig = setupLighting(scene, renderer);
 
 function resize() {
   renderer.setSize(innerWidth, innerHeight);
@@ -73,6 +73,7 @@ await Promise.all(
 // 見た目は、調整ページで決めた基準値を使う（8,300個を一度に描くので、揺らぎは入れない）。
 // 「透け」は描くのが重い（画面をもう1回描く）ので、ここでは切る
 const look = await loadLook();
+rig.apply(look.lighting);
 for (const name of Object.keys(STOCK)) {
   const entry = look.ingredients[name];
   if (!entry) continue;
@@ -100,6 +101,7 @@ for (const [name, count] of Object.entries(STOCK)) {
     if (!o.isMesh) return;
     const im = new THREE.InstancedMesh(o.geometry, o.material, count);
     im.frustumCulled = false;
+    im.castShadow = im.receiveShadow = true;
     im.userData.local = o.matrixWorld.clone();
     scene.add(im);
     instanced[name].push(im);
@@ -202,7 +204,7 @@ function fit() {
   const dir = new THREE.Vector3(0.25, 0.18, 1).normalize();
   camera.position.copy(controls.target).addScaledVector(dir, dist);
   controls.maxDistance = dist * 4;
-  sun.position.set(radius + 200, height + 400, radius + 300);
+  rig.fit(shape.radius + 70, height);
 }
 
 // ---------- UI ----------
@@ -254,6 +256,7 @@ rebuild();
 
 renderer.setAnimationLoop(() => {
   controls.update();
+  rig.update(camera, controls.target);
   renderer.render(scene, camera);
 });
 

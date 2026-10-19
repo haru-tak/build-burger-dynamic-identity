@@ -60,6 +60,11 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
     button[aria-pressed="true"] {
       background: var(--ink);
       color: var(--paper);
@@ -114,7 +119,7 @@
 </script>
 </head>
 
-<body>
+<body data-models="original">
   <div id="ui">
     <section>
       <div class="label">段数</div>
@@ -125,8 +130,8 @@
       <div id="tiers"></div>
     </section>
     <section>
-      <div class="label">何で挟む？</div>
-      <div class="row" id="bread"></div>
+      <div class="label">スペシャル</div>
+      <div class="row" id="special"></div>
     </section>
     <section>
       <div class="row"><button id="sauceToggle">ソースを選ぶ</button></div>
@@ -136,13 +141,13 @@
       <div class="row"><button id="random">ランダム</button><button id="gridToggle">並べる</button></div>
       <div class="row"><button id="guiToggle" aria-pressed="false">見た目を調整（P）</button></div>
     </section>
-    <section><a href="./million.html" style="color: var(--ink)">100万円バーガー →</a><a href="./tune.html" style="color: var(--ink)">具材の見た目を調整する →</a></section>
+    <section><a href="./million.html" style="color: var(--ink)">100万円バーガー →</a><a href="./scan.html" style="color: var(--ink)">スキャン版 →</a><a href="./hybrid.html" style="color: var(--ink)">モデル＋スキャン色版 →</a></section>
   </div>
   <div id="info">
     <div id="serial"></div>
     <div id="spec"></div>
   </div>
-  <div id="hint">Space 長押し／ダブルクリック：分解してソースを見る<br>R：ランダム　G：並べる　P：見た目を調整　ドラッグ：回転</div>
+  <div id="hint">Space 長押し／ダブルクリック：分解してソースを見る<br>R：ランダム　G：並べる　ドラッグ：回転</div>
   <script type="module" src="./main.js"></script>
 </body>
 
